@@ -16,8 +16,6 @@ fi
 echo -e "\nStep 2: Loading initial patient data..."
 echo "POSTing patient data from sample-patient.json to FHIR server..."
 PATIENT_RESPONSE=$(curl -s -X POST -H "Content-Type: application/json" -d @sample-patient.json http://localhost:8080/fhir)
-echo "$PATIENT_RESPONSE" | jq .
-
 # Extract the patient ID from the response
 PATIENT_ID=$(echo "$PATIENT_RESPONSE" | jq -r '.entry[0].response.location' | cut -d'/' -f2)
 echo "Created patient with ID: $PATIENT_ID"
@@ -42,16 +40,66 @@ else
     exit 1
 fi
 
-# echo -e "\nLast step: Cleaning up - expunging all data..."
-# curl -s -X POST 'http://localhost:8080/fhir/$expunge' \
-#   -H 'Content-Type: application/fhir+json' \
-#   -d '{
-#     "resourceType": "Parameters",
-#     "parameter": [
-#       {
-#         "name": "expungeEverything",
-#         "valueBoolean": true
-#       }
-#     ]
-#   }'
+echo -e "\nStep 5: Adding nationality search parameter..."
+echo "POSTing nationality search parameter to FHIR server..."
+SEARCH_PARAM_RESPONSE=$(curl -s -X POST \
+  -H "Content-Type: application/json" \
+  -d @nationality-search-extension.json \
+  http://localhost:8080/fhir/SearchParameter)
+echo "$SEARCH_PARAM_RESPONSE" | jq .
+
+echo -e "\nStep 6: Reindexing HAPI FHIR to enable search..."
+REINDEX_RESPONSE=$(curl -s -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "resourceType": "Parameters",
+    "parameter": [
+      {
+        "name": "mode",
+        "valueString": "all"
+      }
+    ]
+  }' \
+  http://localhost:8080/fhir/\$reindex)
+echo "Reindex initiated. Waiting for completion..."
+sleep 5  # Give some time for reindexing to complete
+
+echo -e "\nStep 7: Verifying nationality search functionality..."
+SEARCH_RESULT=$(curl -s "http://localhost:8080/fhir/Patient?nationality=CA")
+SEARCH_COUNT=$(echo "$SEARCH_RESULT" | jq '.total')
+
+if [ "$SEARCH_COUNT" -eq 1 ]; then
+    echo -e "\nSearch verification successful - found $SEARCH_COUNT patient with nationality=CA"
+    echo "Search result:"
+    echo "$SEARCH_RESULT" | jq '.entry[0].resource.id'
+    
+    # Verify it's the same patient we created
+    FOUND_PATIENT_ID=$(echo "$SEARCH_RESULT" | jq -r '.entry[0].resource.id')
+    if [ "$FOUND_PATIENT_ID" = "$PATIENT_ID" ]; then
+        echo "Patient ID verification successful - found the correct patient"
+    else
+        echo "Patient ID verification failed - expected $PATIENT_ID but found $FOUND_PATIENT_ID"
+        exit 1
+    fi
+else
+    echo -e "\nSearch verification failed - expected 1 patient with nationality=CA, but found $SEARCH_COUNT"
+    echo "Search result:"
+    echo "$SEARCH_RESULT" | jq .
+    exit 1
+fi
+
+echo -e "\nAll tests passed successfully!"
+
+echo -e "\nCleaning up - expunging all data."
+curl -s -X POST 'http://localhost:8080/fhir/$expunge' \
+  -H 'Content-Type: application/fhir+json' \
+  -d '{
+    "resourceType": "Parameters",
+    "parameter": [
+      {
+        "name": "expungeEverything",
+        "valueBoolean": true
+      }
+    ]
+  }'
 
