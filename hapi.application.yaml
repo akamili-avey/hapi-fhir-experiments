@@ -8,3 +8,7 @@ spring:
     properties:
       hibernate.dialect: ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgresDialect
       hibernate.search.enabled: false
+hapi:
+  fhir:
+    allow_multiple_delete: true
+    delete_expunge_enabled: true
