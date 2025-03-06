@@ -1,0 +1,19 @@
+{
+    "resourceType": "SearchParameter",
+    "id": "Patient-nationality",
+    "url": "http://hl7.org/fhir/SearchParameter/Patient-nationality",
+    "version": "1.0.0",
+    "name": "nationality",
+    "status": "active",
+    "experimental": false,
+    "date": "2024-01-01",
+    "publisher": "HL7 International",
+    "description": "Search for patients based on their nationality",
+    "code": "nationality",
+    "base": ["Patient"],
+    "type": "token",
+    "expression": "Patient.extension('http://hl7.org/fhir/StructureDefinition/patient-nationality').extension('code').value",
+    "xpath": "f:Patient/f:extension[@url='http://hl7.org/fhir/StructureDefinition/patient-nationality']/f:extension[@url='code']/f:valueCodeableConcept",
+    "xpathUsage": "normal",
+    "target": ["Patient"]
+}
