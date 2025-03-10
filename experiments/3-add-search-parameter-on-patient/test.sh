@@ -48,15 +48,29 @@ SEARCH_PARAM_RESPONSE=$(curl -s -X POST \
   http://localhost:8080/fhir/SearchParameter)
 echo "$SEARCH_PARAM_RESPONSE" | jq .
 
-echo -e "\nStep 6: Reindexing HAPI FHIR to enable search..."
+echo -e "\nStep 6: Searching before reindexing... expect 0 results"
+SEARCH_RESULT=$(curl -s "http://localhost:8080/fhir/Patient?nationality=CA")
+SEARCH_COUNT=$(echo "$SEARCH_RESULT" | jq '.total')
+if [ "$SEARCH_COUNT" -eq 0 ]; then
+    echo -e "\nSearch verification successful - found $SEARCH_COUNT patient with nationality=CA"
+    echo "Search result:"
+    echo "$SEARCH_RESULT" | jq '.entry[0].resource.id'
+else
+    echo -e "\nSearch verification failed - expected 0 patients with nationality=CA, but found $SEARCH_COUNT"
+    echo "Search result:"
+    echo "$SEARCH_RESULT" | jq .
+    exit 1
+fi
+
+echo -e "\nStep 6: Reindexing Patient resources to enable search..."
 REINDEX_RESPONSE=$(curl -s -X POST \
   -H "Content-Type: application/json" \
   -d '{
     "resourceType": "Parameters",
     "parameter": [
       {
-        "name": "mode",
-        "valueString": "all"
+        "name": "url",
+        "valueString": "Patient?"
       }
     ]
   }' \
@@ -90,16 +104,15 @@ fi
 
 echo -e "\nAll tests passed successfully!"
 
-echo -e "\nCleaning up - expunging all data."
-curl -s -X POST 'http://localhost:8080/fhir/$expunge' \
-  -H 'Content-Type: application/fhir+json' \
-  -d '{
-    "resourceType": "Parameters",
-    "parameter": [
-      {
-        "name": "expungeEverything",
-        "valueBoolean": true
-      }
-    ]
-  }'
-
+# echo -e "\nCleaning up - expunging all data."
+# curl -s -X POST 'http://localhost:8080/fhir/$expunge' \
+#   -H 'Content-Type: application/fhir+json' \
+#   -d '{
+#     "resourceType": "Parameters",
+#     "parameter": [
+#       {
+#         "name": "expungeEverything",
+#         "valueBoolean": true
+#       }
+#     ]
+#   }'
