@@ -1,0 +1,49 @@
+{
+  "resourceType": "StructureDefinition",
+  "id": "patient-age",
+  "url": "http://hl7.org/fhir/StructureDefinition/patient-age",
+  "version": "1.0.0",
+  "name": "PatientAge",
+  "title": "Patient Age Extension",
+  "status": "active",
+  "experimental": false,
+  "date": "2024-01-01",
+  "publisher": "HL7 International",
+  "description": "Extension for recording a patient's age",
+  "fhirVersion": "4.0.1",
+  "kind": "complex-type",
+  "abstract": false,
+  "context": [
+    {
+      "type": "element",
+      "expression": "Patient"
+    }
+  ],
+  "type": "Extension",
+  "baseDefinition": "http://hl7.org/fhir/StructureDefinition/Extension",
+  "derivation": "constraint",
+  "differential": {
+    "element": [
+      {
+        "id": "Extension",
+        "path": "Extension",
+        "short": "Patient age",
+        "definition": "The age of the patient in years"
+      },
+      {
+        "id": "Extension.url",
+        "path": "Extension.url",
+        "fixedUri": "http://hl7.org/fhir/StructureDefinition/patient-age"
+      },
+      {
+        "id": "Extension.value[x]",
+        "path": "Extension.value[x]",
+        "type": [
+          {
+            "code": "integer"
+          }
+        ]
+      }
+    ]
+  }
+} 

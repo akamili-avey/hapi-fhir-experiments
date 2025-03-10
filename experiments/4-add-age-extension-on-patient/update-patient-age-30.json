@@ -1,0 +1,10 @@
+[
+    {
+      "op": "add",
+      "path": "/extension/-",
+      "value": {
+        "url": "http://hl7.org/fhir/StructureDefinition/patient-age",
+        "valueInteger": 30
+      }
+    }
+] 
