@@ -76,8 +76,10 @@ REINDEX_RESPONSE=$(curl -s -X POST \
   }' \
   http://localhost:8080/fhir/\$reindex)
 echo "Reindex initiated. Waiting for completion..."
-sleep 5  # Give some time for reindexing to complete
+sleep 5 
 
+# THE FOLLOWING MIGHT FAIL - Indexing new search parameters sometimes take minutes, for reasons I don't know.
+# if it does, just re-run the script after some delay and manual expunge (copy from below).
 echo -e "\nStep 7: Verifying nationality search functionality..."
 SEARCH_RESULT=$(curl -s "http://localhost:8080/fhir/Patient?nationality=CA")
 SEARCH_COUNT=$(echo "$SEARCH_RESULT" | jq '.total')
@@ -104,15 +106,15 @@ fi
 
 echo -e "\nAll tests passed successfully!"
 
-# echo -e "\nCleaning up - expunging all data."
-# curl -s -X POST 'http://localhost:8080/fhir/$expunge' \
-#   -H 'Content-Type: application/fhir+json' \
-#   -d '{
-#     "resourceType": "Parameters",
-#     "parameter": [
-#       {
-#         "name": "expungeEverything",
-#         "valueBoolean": true
-#       }
-#     ]
-#   }'
+echo -e "\nCleaning up - expunging all data."
+curl -s -X POST 'http://localhost:8080/fhir/$expunge' \
+  -H 'Content-Type: application/fhir+json' \
+  -d '{
+    "resourceType": "Parameters",
+    "parameter": [
+      {
+        "name": "expungeEverything",
+        "valueBoolean": true
+      }
+    ]
+  }'
