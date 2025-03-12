@@ -11,6 +11,8 @@ services:
         target: /app/config/application.yaml
     depends_on:
       - db
+    environment:
+      - HAPI_FHIR_VALIDATION_REQUESTS_ENABLED=false # setting to enable/disable structure definition validation against incoming data. See https://medblocks.com/blog/how-to-enable-fhir-profile-validation-with-hapi-fhir-jpa-server
 
 
   db:
