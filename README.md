@@ -44,6 +44,7 @@ The server will be available at http://localhost:8080/fhir (this URL is assumed 
 1. [Loading Patient Data](experiments/1-load-patient-data-into-fhir/README.md) - Demonstrates how to load patient data into HAPI FHIR and verify its storage.
 2. [Adding Extensions](experiments/2-add-an-extension-on-patient/README.md) - Shows how to define and add custom extensions to Patient resources.
 3. [Custom Search Parameters](experiments/3-add-search-parameter-on-patient/README.md) - Illustrates creating and using custom search parameters.
+4. [Age Extension and Search](experiments/4-add-age-extension-on-patient/README.md) - Demonstrates adding a numeric (age) extension to patients, showcasing numeric filtering and sorting capabilities.
 
 ## Running Experiments
 
