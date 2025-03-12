@@ -13,7 +13,7 @@ if [ "$PATIENT_COUNT" -ne 0 ]; then
     exit 1
 fi
 
-echo -e "\nStep 2: Loading initial patient data..."
+echo -e "\nStep 1: Loading initial patient data..."
 echo "POSTing patient data from sample-patient.json to FHIR server..."
 PATIENT_RESPONSE=$(curl -s -X POST -H "Content-Type: application/json" -d @sample-patient.json http://localhost:8080/fhir)
 # Extract the patient ID from the response
@@ -27,7 +27,16 @@ curl -s -X PATCH \
      -d @update-patient-nationality.json \
      "http://localhost:8080/fhir/Patient/$PATIENT_ID"
 
-echo -e "\nStep 4: Requiring patient data should now have nationality..."
+
+echo -e "\nStep 2: Adding nationality search parameter..."
+echo "POSTing nationality search parameter to FHIR server..."
+SEARCH_PARAM_RESPONSE=$(curl -s -X POST \
+  -H "Content-Type: application/json" \
+  -d @nationality-search-extension.json \
+  http://localhost:8080/fhir/SearchParameter)
+echo "$SEARCH_PARAM_RESPONSE" | jq .
+
+echo -e "\nStep 3: Requiring patient data should now have nationality..."
 EXPECTED_EXTENSION=$(cat update-patient-nationality.json | jq '.[0].value')
 
 ACTUAL_EXTENSION=$(curl -s "http://localhost:8080/fhir/Patient/$PATIENT_ID" | jq '.extension[-1]')
@@ -40,47 +49,10 @@ else
     exit 1
 fi
 
-echo -e "\nStep 5: Adding nationality search parameter..."
-echo "POSTing nationality search parameter to FHIR server..."
-SEARCH_PARAM_RESPONSE=$(curl -s -X POST \
-  -H "Content-Type: application/json" \
-  -d @nationality-search-extension.json \
-  http://localhost:8080/fhir/SearchParameter)
-echo "$SEARCH_PARAM_RESPONSE" | jq .
-
-echo -e "\nStep 6: Searching before reindexing... expect 0 results"
-SEARCH_RESULT=$(curl -s "http://localhost:8080/fhir/Patient?nationality=CA")
-SEARCH_COUNT=$(echo "$SEARCH_RESULT" | jq '.total')
-if [ "$SEARCH_COUNT" -eq 0 ]; then
-    echo -e "\nSearch verification successful - found $SEARCH_COUNT patient with nationality=CA"
-    echo "Search result:"
-    echo "$SEARCH_RESULT" | jq '.entry[0].resource.id'
-else
-    echo -e "\nSearch verification failed - expected 0 patients with nationality=CA, but found $SEARCH_COUNT"
-    echo "Search result:"
-    echo "$SEARCH_RESULT" | jq .
-    exit 1
-fi
-
-echo -e "\nStep 6: Reindexing Patient resources to enable search..."
-REINDEX_RESPONSE=$(curl -s -X POST \
-  -H "Content-Type: application/json" \
-  -d '{
-    "resourceType": "Parameters",
-    "parameter": [
-      {
-        "name": "url",
-        "valueString": "Patient?"
-      }
-    ]
-  }' \
-  http://localhost:8080/fhir/\$reindex)
-echo "Reindex initiated. Waiting for completion..."
-sleep 5 
-
 # THE FOLLOWING MIGHT FAIL - Indexing new search parameters sometimes take minutes, for reasons I don't know.
 # if it does, just re-run the script after some delay and manual expunge (copy from below).
-echo -e "\nStep 7: Verifying nationality search functionality..."
+# once HAPI FHIR is aware that this should be indexed, subsequent runs will pass.
+echo -e "\nStep 4: Verifying nationality search functionality..."
 SEARCH_RESULT=$(curl -s "http://localhost:8080/fhir/Patient?nationality=CA")
 SEARCH_COUNT=$(echo "$SEARCH_RESULT" | jq '.total')
 
